@@ -8,7 +8,9 @@ from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer, seed_everything
 seed_everything(1112)
 import tqdm
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies import DDPStrategy as DDPPlugin
+
+#from pytorch_lightning.plugins import DDPPlugin
 from networks.model import LLMVS
 
 if __name__ == '__main__':
