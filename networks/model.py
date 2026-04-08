@@ -173,5 +173,5 @@ class LLMVS(pl.LightningModule):
         }
         return [optimizer], [lr_scheduler]
 
-    def optimizer_zero_grad(self, epoch, batch_idx, optimizer, optimizer_idx):
+    def optimizer_zero_grad(self, epoch, batch_idx, optimizer):
         optimizer.zero_grad(set_to_none=True)
