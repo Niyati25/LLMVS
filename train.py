@@ -4,7 +4,8 @@ import argparse
 
 from utils.configs import Config, str2bool
 from torch.utils.data import DataLoader
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies import DDPStrategy
+#from pytorch_lightning.plugins import DDPPlugin
 ######################################## Pytorch lightning ########################################################
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import Trainer, seed_everything
@@ -82,7 +83,7 @@ if __name__ == '__main__':
                     progress_bar_refresh_rate=100,
                     profiler="simple",
                     log_every_n_steps=4,
-                    plugins=DDPPlugin(find_unused_parameters=False),
+                    strategy=DDPStrategy(find_unused_parameters=False),
                     )
 
     trainer.validate(model,val_loader)
