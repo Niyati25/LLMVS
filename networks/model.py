@@ -15,9 +15,9 @@ seed_everything(1112)
 class LLMVS(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
+        self.config = config
         self.validation_step_outputs = []
         self.test_step_outputs = []
-        self.config = config
         
         self.d_max_pooling = nn.AdaptiveMaxPool1d(self.config.reduced_dim)
         self.d_linear1 = nn.Linear(5120, self.config.reduced_dim)
@@ -81,7 +81,6 @@ class LLMVS(pl.LightningModule):
 
         self.log('train_loss', loss, on_step=True, on_epoch=True, batch_size = 1)
 
-            self.validation_step_outputs.clear()
         torch.cuda.empty_cache()
         return loss
     
@@ -102,12 +101,12 @@ class LLMVS(pl.LightningModule):
         n_frames = val_batch['n_frames']
         nfps = val_batch['n_frame_per_seg'][0].tolist()
         video_name = val_batch['video_name'][0]
- 
+
         picks = val_batch['picks'][0]
         machine_summary = generate_summary(score, cps, n_frames, nfps, picks)
 
         kTau, sRho = evaluate_summary(machine_summary, gt_summary, video_name, score, eval_data=self.config.dataset)
-
+        
         output = torch.tensor([kTau, sRho])
         self.validation_step_outputs.append(output)
         return output
@@ -115,15 +114,14 @@ class LLMVS(pl.LightningModule):
     def on_validation_epoch_end(self):
         if self.validation_step_outputs:
             outs = torch.stack(self.validation_step_outputs)
-        outs = torch.tensor(outs)
-        
-        kTau = outs[:,0].mean()
-        sRho = outs[:,1].mean()
+            kTau = outs[:,0].mean()
+            sRho = outs[:,1].mean()
 
-        self.log('val_kTau', kTau, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('val_sRho', sRho, on_step=False, on_epoch=True, prog_bar=True)
+            self.log('val_kTau', kTau, on_step=False, on_epoch=True, prog_bar=True)
+            self.log('val_sRho', sRho, on_step=False, on_epoch=True, prog_bar=True)
 
             self.validation_step_outputs.clear()
+        
         torch.cuda.empty_cache()
 
     def test_step(self, val_batch, batch_idx):
@@ -150,20 +148,21 @@ class LLMVS(pl.LightningModule):
         machine_summary = generate_summary(score, cps, n_frames, nfps, picks)
 
         kTau, sRho = evaluate_summary(machine_summary, gt_summary, video_name, score, eval_data=self.config.dataset)
-
-
+        
         output = torch.tensor([kTau, sRho])
-        self.validation_step_outputs.append(output)
+        self.test_step_outputs.append(output)
         return output
     
     def on_test_epoch_end(self):
-        outs = torch.tensor(outs)
+        if self.test_step_outputs:
+            outs = torch.stack(self.test_step_outputs)
+            kTau = outs[:,0].mean()
+            sRho = outs[:,1].mean()
 
-        kTau = outs[:,0].mean()
-        sRho = outs[:,1].mean()
-
-        self.log('val_kTau', kTau, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('val_sRho', sRho, on_step=False, on_epoch=True, prog_bar=True)
+            self.log('val_kTau', kTau, on_step=False, on_epoch=True, prog_bar=True)
+            self.log('val_sRho', sRho, on_step=False, on_epoch=True, prog_bar=True)
+            
+            self.test_step_outputs.clear()
 
     def configure_optimizers(self):        
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.config.lr)
