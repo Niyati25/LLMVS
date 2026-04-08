@@ -70,8 +70,8 @@ if __name__ == '__main__':
     )
 
     trainer = Trainer(
-                    gpus=-1,
-                    accelerator='ddp',
+                    accelerator='gpu',
+		    devices=opt.gpus,
                     max_epochs=opt.epochs,
                     accumulate_grad_batches=2,
                     precision=16,
